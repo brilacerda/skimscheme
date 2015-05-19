@@ -124,8 +124,9 @@ environment =
           $ insert "*"              (Native numericMult) 
           $ insert "-"              (Native numericSub) 
           $ insert "car"            (Native car)           
-          $ insert "cdr"            (Native cdr)      
-         -- $ insert "cons"           (NonNative cons)     
+          $ insert "cdr"            (Native cdr)
+          $ insert "cons"           (Native cons)
+          $ insert "lt"             (Native lt)
             empty
 
 type StateT = Map String LispVal
@@ -152,19 +153,24 @@ instance Monad StateTransformer where
 -- Includes some auxiliary functions. Does not include functions that modify
 -- state. These functions, such as define and set!, must run within the
 -- StateTransformer monad. 
-{-
+
 --- A função "cons" para criar uma lista a partir de uma cabeça 
 -- e de uma lista (analogamente ao operador ":" de Haskell). 
 --author gml
-cons :: LispVal -> LispVal -> [LispVal]
-cons (Number n) (List u) = List ((Number n):u)
-cons (String s) (List t) = List ((String s):t)
-cons (Bool b) (List o) = List ((Bool o): o)
-cons l (List ls) = Error "invalid List"
--}
+--*Main> cons [Number 0, (List (String "LOL" : Number 2 : Bool False :[] ))]
+--(0 "LOL" 2 #f)
 
+cons :: [LispVal] -> LispVal
+cons (val:List lis:[]) = List (val:lis)
+cons _ = Error "invalid List"
+
+--author gml
+--*Main> lt [Number 3, Number 6]
+--#t
+--*Main> lt [Number 3, Number 1]
+--#f
 lt :: [LispVal] -> LispVal
-lt [List ((Number a):(Number b):ls)]= Bool (a < b)
+lt ((Number a):(Number b):[]) = Bool (a < b)
 lt _ = Error "wrong number of arguments or invalid type"
 
 car :: [LispVal] -> LispVal
