@@ -125,7 +125,7 @@ environment =
           $ insert "-"              (Native numericSub) 
           $ insert "car"            (Native car)           
           $ insert "cdr"            (Native cdr)      
-          $ insert "cons"           (NonNative cons)     
+         -- $ insert "cons"           (NonNative cons)     
             empty
 
 type StateT = Map String LispVal
@@ -152,13 +152,20 @@ instance Monad StateTransformer where
 -- Includes some auxiliary functions. Does not include functions that modify
 -- state. These functions, such as define and set!, must run within the
 -- StateTransformer monad. 
-
+{-
 --- A função "cons" para criar uma lista a partir de uma cabeça 
 -- e de uma lista (analogamente ao operador ":" de Haskell). 
-cons :: LispVal -> [LispVal] -> [LispVal]
-cons (Number n) [List u] = List ((Number n):u)
+--author gml
+cons :: LispVal -> LispVal -> [LispVal]
+cons (Number n) (List u) = List ((Number n):u)
 cons (String s) (List t) = List ((String s):t)
-cons (Bool b) (Bool o) = List ((Bool o): o)
+cons (Bool b) (List o) = List ((Bool o): o)
+cons l (List ls) = Error "invalid List"
+-}
+
+lt :: [LispVal] -> LispVal
+lt [List ((Number a):(Number b):ls)]= Bool (a < b)
+lt _ = Error "wrong number of arguments or invalid type"
 
 car :: [LispVal] -> LispVal
 car [List (a:as)] = a
