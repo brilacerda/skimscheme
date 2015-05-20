@@ -44,6 +44,9 @@ eval env val@(String _) = return val
 eval env val@(Atom var) = stateLookup env var 
 eval env val@(Number _) = return val
 eval env val@(Bool _) = return val
+eval env (List [Atom "if", [cond:th:els]]) = (eval env cond) >>= (\v -> case v of { (error@(Error _)) -> return error; \v -> case v of Atom "then" -> eval env (List (Atom "then": ls));  \v -> case v of Atom "else" -> eval env (List (Atom "else": ls))})
+eval env (List [Atom "then", [doIt]) = eval env doIt
+eval env (List [Atom "else", [doIt]) = eval env doIt
 eval env (List [Atom "quote", val]) = return val
 eval env (List (Atom "begin":[v])) = eval env v
 eval env (List (Atom "begin": l: ls)) = (eval env l) >>= (\v -> case v of { (error@(Error _)) -> return error; otherwise -> eval env (List (Atom "begin": ls))})
@@ -127,6 +130,7 @@ environment =
           $ insert "cdr"            (Native cdr)
           $ insert "cons"           (Native cons)
           $ insert "lt"             (Native lt)
+          $ insert "divInt"         (Native divInt)
             empty
 
 type StateT = Map String LispVal
@@ -157,21 +161,55 @@ instance Monad StateTransformer where
 --- A função "cons" para criar uma lista a partir de uma cabeça 
 -- e de uma lista (analogamente ao operador ":" de Haskell). 
 --author gml
---*Main> cons [Number 0, (List (String "LOL" : Number 2 : Bool False :[] ))]
---(0 "LOL" 2 #f)
+-- *Main> cons [Number 0, (List (String "LOL" : Number 2 : Bool False :[] ))]
+-- (0 "LOL" 2 #f)
 
 cons :: [LispVal] -> LispVal
 cons (val:List lis:[]) = List (val:lis)
 cons _ = Error "invalid List"
 
---author gml
---*Main> lt [Number 3, Number 6]
---#t
---*Main> lt [Number 3, Number 1]
---#f
+{-}
+ *Main> lt [Number 3, Number 6]
+ #t
+ *Main> lt [Number 3, Number 1]
+ #f
+ author gml -}
 lt :: [LispVal] -> LispVal
 lt ((Number a):(Number b):[]) = Bool (a < b)
 lt _ = Error "wrong number of arguments or invalid type"
+
+{-}
+ *Main> divInt (Number 500:Number 2:[])
+ 250
+author gml -}
+divInt :: [LispVal] -> LispVal
+divInt ((Number a):(Number b):[]) = Number (div a b)
+divInt _ = Error "wrong number of arguments or invalid type"
+
+{-
+*Main> modus (Number 500:Number 3:[])
+2
+*Main> modus (Number 10:Number 3:[])
+1
+author gml -}
+modus :: [LispVal] -> LispVal
+modus ((Number a):(Number b):[]) = Number (mod a b)
+modus _ = Error "wrong number of arguments or invalid type"
+
+{-
+*Main> eqv (String "LOL":String "LOL":[])
+#t
+*Main> eqv (String "abc":String "LOL":[])
+#f
+*Main> eqv (Number 500:Number 3:[])
+#f
+-}
+eqv :: [LispVal] -> LispVal
+eqv ((Number a):(Number b):[]) = Bool (a == b)
+eqv ((String a):(String b):[]) = Bool (a == b)
+-- eqv ((List a):(List b):[]) = Bool (and (a==[]) (b==[]))
+-- ainda não sei proceder com DottedList
+eqv _ = Error "wrong number of arguments or invalid type"
 
 car :: [LispVal] -> LispVal
 car [List (a:as)] = a
