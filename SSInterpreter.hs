@@ -44,9 +44,13 @@ eval env val@(String _) = return val
 eval env val@(Atom var) = stateLookup env var 
 eval env val@(Number _) = return val
 eval env val@(Bool _) = return val
---eval env (List [Atom "if", [cond:th:els]]) = (eval env cond) >>= (\v -> case v of { (error@(Error _)) -> return error; True -> eval env (List (Atom "then": els));  False -> eval env (List (Atom "else": rest))})
---eval env (List [Atom "then", [doIt]) = eval env doIt
---eval env (List [Atom "else", [doIt]) = eval env doIt
+eval env (List [Atom "if", cond ,th, els]) = (eval env cond) >>= (
+    \v -> case v of 
+  (error@(Error _)) -> return error
+  Bool True -> eval env th
+  Bool False -> eval env els
+  )
+eval env (List (Atom "comment":[])) = return (List []);
 eval env (List [Atom "quote", val]) = return val
 eval env (List (Atom "begin":[v])) = eval env v
 eval env (List (Atom "begin": l: ls)) = (eval env l) >>= (\v -> case v of { (error@(Error _)) -> return error; otherwise -> eval env (List (Atom "begin": ls))})
@@ -133,7 +137,6 @@ environment =
           $ insert "divInt"         (Native divInt)
           $ insert "modus"          (Native modus)
           $ insert "eqv"            (Native eqv)
-          $ insert "comment"        (Native comment)
             empty
 
 type StateT = Map String LispVal
@@ -223,9 +226,6 @@ eqv _ = Error "wrong number of arguments or invalid type"
 eqvList :: [LispVal] -> [LispVal] -> Bool
 eqvList [] [] = True
 eqvList _ _ = False
-
-comment :: [LispVal] -> LispVal
-comment _ = String ""
 
 
 car :: [LispVal] -> LispVal
