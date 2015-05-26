@@ -190,6 +190,7 @@ lt _ = Error "wrong number of arguments or invalid type"
 author gml -}
 divInt :: [LispVal] -> LispVal
 divInt ((Number a):(Number b):[]) = Number (div a b)
+divInt ((Number a):(Number 0):[]) = Error "It's not possible to divide by zero"
 divInt _ = Error "wrong number of arguments or invalid type"
 
 {-
