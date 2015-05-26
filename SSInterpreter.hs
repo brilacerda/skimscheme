@@ -39,6 +39,19 @@ import SSPrettyPrinter
 -----------------------------------------------------------
 --                      INTERPRETER                      --
 -----------------------------------------------------------
+
+{-
+
+como rodar no DOS
+ghc SSInterpreter.hs
+SSInterpreter.exe "(comando aqui)"
+
+SSInterpreter.exe "(if (lt ((Number 5):(Number 8):[])) then String "Verdade" else String "Mentira" )"
+
+SSInterpreter.exe "(comment String "gabriela testando")"
+
+-}
+
 eval :: StateT -> LispVal -> StateTransformer LispVal
 eval env val@(String _) = return val
 eval env val@(Atom var) = stateLookup env var 
@@ -166,7 +179,6 @@ instance Monad StateTransformer where
 
 --- A função "cons" para criar uma lista a partir de uma cabeça 
 -- e de uma lista (analogamente ao operador ":" de Haskell). 
---author gml
 -- *Main> cons [Number 0, (List (String "LOL" : Number 2 : Bool False :[] ))]
 -- (0 "LOL" 2 #f)
 
@@ -179,7 +191,7 @@ cons _ = Error "invalid List"
  #t
  *Main> lt [Number 3, Number 1]
  #f
- author gml -}
+ -}
 lt :: [LispVal] -> LispVal
 lt ((Number a):(Number b):[]) = Bool (a < b)
 lt _ = Error "wrong number of arguments or invalid type"
@@ -187,10 +199,11 @@ lt _ = Error "wrong number of arguments or invalid type"
 {-}
  *Main> divInt (Number 500:Number 2:[])
  250
-author gml -}
+ divInt (Number 8:Number 0:[])
+ -}
 divInt :: [LispVal] -> LispVal
-divInt ((Number a):(Number b):[]) = Number (div a b)
 divInt ((Number a):(Number 0):[]) = Error "It's not possible to divide by zero"
+divInt ((Number a):(Number b):[]) = Number (div a b)
 divInt _ = Error "wrong number of arguments or invalid type"
 
 {-
@@ -198,7 +211,7 @@ divInt _ = Error "wrong number of arguments or invalid type"
 2
 *Main> modus (Number 10:Number 3:[])
 1
-author gml -}
+ -}
 modus :: [LispVal] -> LispVal
 modus ((Number a):(Number b):[]) = Number (mod a b)
 modus _ = Error "wrong number of arguments or invalid type"
@@ -226,6 +239,7 @@ eqv _ = Error "wrong number of arguments or invalid type"
 
 eqvList :: [LispVal] -> [LispVal] -> Bool
 eqvList [] [] = True
+--ADICIONAR O CASO DE SE A LISTA DE ELEMENTOS FOR IGUAL
 eqvList _ _ = False
 
 
