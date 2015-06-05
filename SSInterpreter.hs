@@ -79,10 +79,6 @@ eval env (List (Atom "comment":_)) = return (List [])
 eval env (List (Atom "set":(Atom var):expr:[])) = stateLookup env var >>= (
   \v -> case v of   {Error v -> return $ (Error "variable does not exist."); otherwise -> (setFunction env (transformLispval var) expr) })
 
-
-
-
-
 eval env (List [Atom "quote", val]) = return val
 eval env (List (Atom "begin":[v])) = eval env v
 eval env (List (Atom "begin": l: ls)) = (eval env l) >>= (\v -> case v of { (error@(Error _)) -> return error; otherwise -> eval env (List (Atom "begin": ls))})
