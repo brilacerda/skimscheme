@@ -1,4 +1,9 @@
 {-
+cd desktop/if686/skimscheme/
+ghc SSInterpreter.hs
+SSInterpreter.exe "(begin())"
+-}
+{-
 
 A basic interpreter for a purely functional subset of Scheme named SkimScheme.
 Part of this interpreter has been derived from the "Write Yourself a Scheme in
@@ -44,13 +49,27 @@ eval env val@(String _) = return val
 eval env val@(Atom var) = stateLookup env var 
 eval env val@(Number _) = return val
 eval env val@(Bool _) = return val
+
+-- >SSInterpreter.exe "(begin (if true 3 4))" resposta 3
+-- >SSInterpreter.exe "(begin (if (lt 2 7) 7 2))" resposta 7
+-- >SSInterpreter.exe "(begin (comment 'qualquer coisa aqui))" resposta () == vazio
+
 eval env (List [Atom "if", cond ,th, els]) = (eval env cond) >>= (
     \v -> case v of 
   (error@(Error _)) -> return error
   Bool True -> eval env th
   Bool False -> eval env els
   )
-eval env (List (Atom "comment":[])) = return (List []);
+
+eval env (List (Atom "comment":_)) = return (List [])
+
+eval env (List (Atom "set":(Atom var):expr:[])) = stateLookup env var >>= (
+  \v -> case v of   {Error v -> return $ (Error "variable does not exist."); otherwise -> (setFunction env (transformLispval var) expr) })
+
+
+
+
+
 eval env (List [Atom "quote", val]) = return val
 eval env (List (Atom "begin":[v])) = eval env v
 eval env (List (Atom "begin": l: ls)) = (eval env l) >>= (\v -> case v of { (error@(Error _)) -> return error; otherwise -> eval env (List (Atom "begin": ls))})
@@ -80,6 +99,7 @@ stateLookup env var = ST $
 -- complicate state management. The same principle applies to set!. We are still
 -- not talking about local definitions. That's a completely different
 -- beast.
+
 define :: StateT -> [LispVal] -> StateTransformer LispVal
 define env [(Atom id), val] = defineVar env id val
 define env [(List [Atom id]), val] = defineVar env id val
@@ -91,8 +111,13 @@ defineVar env id val =
             in (result, (insert id result newState))
      )
 
+setFunction :: StateT -> LispVal -> LispVal -> StateTransformer LispVal
+setFunction env var args = ( define env (var:[args]) )  
 
--- The maybe function yields a value of type b if the evaluation of 
+transformLispval :: String -> LispVal
+transformLispval s =  (String s)
+
+ -- The maybe function yields a value of type b if the evaluation of 
 -- its third argument yields Nothing. In case it yields Just x, maybe
 -- applies its second argument f to x and yields (f x) as its result.
 -- maybe :: b -> (a -> b) -> Maybe a -> b
@@ -104,7 +129,7 @@ apply env func args =
                         (stateLookup env func >>= \res -> 
                           case res of 
                             List (Atom "lambda" : List formals : body:l) -> lambda env formals body args                              
-                            otherwise -> return (Error "not a function.")
+                            otherwise -> return (Error $ func ++ " not a function.")
                         )
  
 -- The lambda function is an auxiliary function responsible for
@@ -220,7 +245,6 @@ eqv ((Number a):(Number b):[]) = Bool (a == b)
 eqv ((String a):(String b):[]) = Bool (a == b)
 eqv ((Bool a):(Bool b):[]) = Bool (a == b)
 eqv ((List a):(List b):[]) = Bool (eqvList a b)
--- ainda não sei proceder com DottedList
 eqv _ = Error "wrong number of arguments or invalid type"
 
 eqvList :: [LispVal] -> [LispVal] -> Bool
